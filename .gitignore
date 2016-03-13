@@ -1,0 +1,6 @@
+*.pyc
+databases/*
+errors/*
+private/*
+sessions/*
+uploads/*

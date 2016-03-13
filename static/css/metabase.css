@@ -1,0 +1,7 @@
+
+
+table.table td,
+table.table th {
+    overflow: hidden;
+    white-space: nowrap;
+}
