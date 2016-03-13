@@ -8,8 +8,6 @@
 ## - download is for downloading files uploaded in the db (does streaming)
 #########################################################################
 
-response.view = 'default/index.html'
-
 
 def readable_id(id):
     return id.replace('_', ' ').title()
@@ -114,26 +112,6 @@ class Itemview:
         self.record = record
 
 
-def delegate(table, first, second, list_columns, list_orderby,
-             default_redirect):
-    record = table(first)
-    verb = first if record is None else second
-    if record is None and verb is None:
-        response.view = 'listview.html'
-        return dict(listview=ListView(table, list_columns, orderby=list_orderby))
-    elif record is None and verb == 'new' or verb == 'edit':
-        response.view = 'form.html'
-        return dict(
-            form=Form(table, record, default_redirect=default_redirect).process(),
-        )
-    elif record and verb is None:
-        response.view = 'itemview.html'
-        return dict(itemview=Itemview(table, record))
-    elif record and verb == 'delete':
-        return dict()
-    raise HTTP(404)
-
-
 class Delegate(dict):
 
     handlers = dict(
@@ -171,12 +149,16 @@ class Delegate(dict):
         record = self.table(first)
         verb = first if record is None else second
         if record and verb is None:
+            response.view = 'itemview.html'
             self['itemview'] = self.build_itemview(record)
         elif record is None and verb is None:
+            response.view = 'listview.html'
             self['listview'] = self.build_listview()
         elif record is None and verb == 'new' or verb == 'edit':
+            response.view = 'form.html'
             self['form'] = self.build_form(record)
         elif record and verb == 'delete':
+            response.view = 'delete.html'
             self['form'] = self.build_delete()
         else:
             raise HTTP(404)
