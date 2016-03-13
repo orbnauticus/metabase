@@ -185,11 +185,6 @@ class Delegate(dict):
         else:
             return SPAN(text, _title=text, _class=type)
 
-    @classmethod
-    def from_request(cls):
-        self = cls(request.args(0), request.args(1))
-        return self
-
     @staticmethod
     def default_redirect(vars):
         return URL(request.controller, request.function, args=[vars.id])
@@ -221,34 +216,22 @@ def index():
     tables = Bijection({Delegate.handlers[key]['id']: key
                         for key in Delegate.handlers})
     first = request.args(0)
-    if first:
-        if len(first) not in (4, 14):
-            raise HTTP(404)
-        function = tables.get(a62.decode(first[:4]), 'not found')
-        reference = a62.decode(first[4:]) if first[4:] else None
-        response.flash = CAT(
-            'function: ', function, BR(),
-            'reference: ', reference, BR(),
-        )
-        verb = {
-            None: None,
-            'e': 'edit',
-            'd': 'delete',
-        }[request.args(1)]
-        return Delegate(reference, verb, function=function)
-    second = request.args(1)
-    # request.function = 'object'
-    return Delegate(first, second, function='object')
-
-
-@auth.requires_login()
-def object():
-    return Delegate.from_request()
-
-
-@auth.requires_login()
-def field():
-    return Delegate.from_request()
+    if first is None:
+        redirect(Delegate.url('object'))
+    if len(first) not in (4, 14):
+        raise HTTP(404)
+    function = tables.get(a62.decode(first[:4]), 'not found')
+    reference = a62.decode(first[4:]) if first[4:] else None
+    response.flash = CAT(
+        'function: ', function, BR(),
+        'reference: ', reference, BR(),
+    )
+    verb = {
+        None: None,
+        'e': 'edit',
+        'd': 'delete',
+    }[request.args(1)]
+    return Delegate(reference, verb, function=function)
 
 
 def user():
