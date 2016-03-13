@@ -140,7 +140,7 @@ class Delegate(dict):
         else:
             raise HTTP(404)
 
-    def display(self, field, row):
+    def display(self, field, row, primary_reference=True):
         text = row[field]
         link = ''
         type, is_reference, table_name = field.type.partition(' ')
@@ -155,8 +155,9 @@ class Delegate(dict):
             text = field.represent(text, row)
         if text is None and hasattr(field, 'extra') and 'null_value' in field.extra:
             text = field.extra['null_value']
-        if hasattr(field, 'extra') and field.extra.get('primary'):
-            link = self.url(field.table._extra['function'], row.id)
+        if primary_reference:
+            if hasattr(field, 'extra') and field.extra.get('primary'):
+                link = self.url(field.table._extra['function'], row.id)
         if link:
             return A(text, _title=text, _href=link, _class=type)
         else:
@@ -249,3 +250,8 @@ def call():
     """
     return service()
 '''
+
+def debug():
+    return dict(debug=dict(
+        user=auth.user,
+    ))

@@ -11,7 +11,8 @@
         {{for column in itemview.table:
             if column.readable:}}<tr>
             <td><label>{{=column.name}}</label></td>
-            <td>{{=display(column, itemview.record)}}</td>
+            <td>{{=display(column, itemview.record,
+                           primary_reference=False)}}</td>
         </tr>{{pass}}{{pass}}
     </table>
 </div>

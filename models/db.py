@@ -62,9 +62,6 @@ auth = Auth(db)
 service = Service()
 plugins = PluginManager()
 
-## create all tables needed by auth if not custom tables
-auth.define_tables(username=True, signature=False)
-
 ## configure email
 mail = auth.settings.mailer
 mail.settings.server = 'logging' if request.is_local else myconf.take('smtp.server')

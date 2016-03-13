@@ -1,11 +1,18 @@
 
 import datetime
+import pytz
 
 
 def function_url(controller, function, *args):
     def urls(id):
         return URL(controller, function, args=filter(None, (id,) + args))
     return urls
+
+
+def represent_datetime(dt, row=None):
+    return dt and (
+        pytz.timezone(auth.user.timezone).localize(dt)
+        .strftime(auth.user.date_format + ' ' + auth.user.time_format))
 
 
 _Field = Field
@@ -19,6 +26,8 @@ def Field(name, type='string', *args, **kwargs):
         kwargs['required'] = True
     if kwargs.pop('automatic', False):
         kwargs['writable'] = False
+    if type == 'datetime':
+        kwargs.setdefault('represent', represent_datetime)
     field = _Field(name, type, *args, **kwargs)
     if type.startswith('reference '):
         referenced = type.partition(' ')[2]
@@ -78,6 +87,18 @@ mb.define_table('organizations', 'organization', 1,
     Field('name', 'string', primary=True),
 )
 
+auth.settings.extra_fields['auth_user'] = [
+    Field('timezone', 'string', requires=IS_IN_SET(pytz.all_timezones)),
+    Field('date_format', 'string', requires=IS_IN_SET([
+        ('%Y-%m-%d', '2000-01-02'),
+    ]), represent=lambda t,row: datetime.datetime.now(tz=pytz.timezone(row['timezone'])).strftime(t)),
+    Field('time_format', 'string', requires=IS_IN_SET([
+        ('%H:%M:%S %Z', '03:45:43 PST'),
+    ]), represent=lambda t,row: datetime.datetime.now(tz=pytz.timezone(row['timezone'])).strftime(t)),
+]
+
+auth.define_tables(username=True, signature=False)
+
 mb.wrap_table(db.auth_user, 'user', 3,
               primary=['username'],
               columns=['id', 'username', 'first_name', 'last_name', 'email'])
@@ -93,9 +114,9 @@ mb.wrap_table(db.auth_group, 'group', 2,
 
 mb.define_table('objects', 'object', 10,
     Field('name', 'string', primary=True),
-    Field('created', 'datetime', default=datetime.datetime.now),
+    Field('created', 'datetime', default=datetime.datetime.utcnow),
     Field('created_by', 'reference auth_user', default=auth.user),
-    Field('modified', 'datetime', update=datetime.datetime.now),
+    Field('modified', 'datetime', update=datetime.datetime.utcnow),
     Field('modified_by', 'reference auth_user', update=auth.user),
     columns=['id', 'name', 'created_by', 'created', 'modified_by', 'modified'],
 )
