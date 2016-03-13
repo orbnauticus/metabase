@@ -114,38 +114,15 @@ class Itemview:
 
 class Delegate(dict):
 
-    handlers = dict(
-        object=dict(
-            id=10,
-            table=db.objects,
-            columns=['id', 'name', 'created_by', 'created', 'modified_by',
-                     'modified'],
-        ),
-        user=dict(
-            id=1,
-            table=db.auth_user,
-            columns=['id', 'username', 'first_name', 'last_name', 'email'],
-        ),
-        group=dict(
-            id=2,
-            table=db.auth_group,
-            columns=['id', 'role', 'description'],
-        ),
-        field=dict(
-            id=11,
-            table=db.fields,
-            columns=['id', 'object', 'name'],
-        ),
-    )
-
-    def __init__(self, first, second, function=None):
-        self.function = function or request.function
-        handler = self.handlers[self.function]
-        self.table = handler['table']
+    def __init__(self, first, second, function):
+        self.function = function
+        self.table = mb.handlers[self.function]
         self.list_orderby = self.table._extra['primary']
-        self.list_columns = handler['columns']
-        dict.__init__(self, display=self.display)
-        self['url'] = self.url
+        self.list_columns = self.table._extra['columns']
+        dict.__init__(self,
+                      display=self.display,
+                      url=self.url,
+        )
         record = self.table(first)
         verb = first if record is None else second
         if record and verb is None:
@@ -203,7 +180,7 @@ class Delegate(dict):
 
     @classmethod
     def url(cls, table, reference=None, verb=None):
-        args = [a62.encode(cls.handlers[table]['id'], 4)]
+        args = [a62.encode(mb.handlers[table]._extra['index'], 4)]
         if reference is not None:
             args[0] += a62.encode(reference, 10)
         if verb:
@@ -213,8 +190,8 @@ class Delegate(dict):
 
 @auth.requires_login()
 def index():
-    tables = Bijection({Delegate.handlers[key]['id']: key
-                        for key in Delegate.handlers})
+    tables = Bijection({table._extra['index']: key
+                        for key, table in mb.handlers.items()})
     first = request.args(0)
     if first is None:
         redirect(Delegate.url('object'))

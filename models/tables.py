@@ -32,10 +32,13 @@ def Field(name, type='string', *args, **kwargs):
 
 
 class MB(object):
+
     def __init__(self, db):
         self.db = db
+        self.handlers = dict()
 
-    def wrap_table(self, table, function, **kwargs):
+    def wrap_table(self, table, function, index, **kwargs):
+        self.handlers[function] = table
         primary = kwargs.pop('primary', None) or []
         if primary:
             for field in primary:
@@ -53,50 +56,62 @@ class MB(object):
             table._format = ' '.join(['%%(%s)s' % name for name in primary])
         table._extra = dict(
             urls=None,
+            index=index,
             function=function,
             primary=primary,
             related=[],
+            columns=kwargs.get('columns') or [],
         )
 
-    def define_table(self, name, function, *fields, **kwargs):
-        self.db.define_table(name, *fields, **kwargs)
-        return self.wrap_table(getattr(self.db, name), function, **kwargs)
+    def define_table(self, name, function, index, *fields, **kwargs):
+        properties = dict(kwargs)
+        properties.pop('columns', None)
+        self.db.define_table(name, *fields, **properties)
+        return self.wrap_table(
+            getattr(self.db, name), function, index,
+            **kwargs)
 
 
 mb = MB(db)
 
-mb.define_table('organizations', 'organization',
+mb.define_table('organizations', 'organization', 1,
     Field('name', 'string', primary=True),
 )
 
-mb.wrap_table(db.auth_user, 'user', primary=['username'])
+mb.wrap_table(db.auth_user, 'user', 3,
+              primary=['username'],
+              columns=['id', 'username', 'first_name', 'last_name', 'email'])
 
-mb.define_table('org_membership', 'membership',
+mb.define_table('org_membership', 'membership', 2,
     Field('organization', 'reference organizations'),
     Field('user', 'reference auth_user'),
 )
 
-mb.wrap_table(db.auth_group, 'group', primary=['role'])
+mb.wrap_table(db.auth_group, 'group', 2,
+              primary=['role'],
+              columns=['id', 'role', 'description'])
 
-mb.define_table('datatypes', 'datatype',
+mb.define_table('objects', 'object', 10,
     Field('name', 'string', primary=True),
-    Field('db_type', 'string', requires=IS_IN_SET(['string', 'integer'])),
-)
-
-mb.define_table('objects', 'object',
     Field('created', 'datetime', default=datetime.datetime.now),
     Field('created_by', 'reference auth_user', default=auth.user),
     Field('modified', 'datetime', update=datetime.datetime.now),
     Field('modified_by', 'reference auth_user', update=auth.user),
-    Field('name', 'string', primary=True),
+    columns=['id', 'name', 'created_by', 'created', 'modified_by', 'modified'],
 )
 
-mb.define_table('fields', 'field',
+mb.define_table('datatypes', 'datatype', 11,
+    Field('name', 'string', primary=True),
+    Field('db_type', 'string', requires=IS_IN_SET(['string', 'integer'])),
+)
+
+mb.define_table('fields', 'field', 12,
     Field('object', 'reference objects'),
     Field('name', 'string', primary=True),
     Field('datatype', 'reference datatypes'),
+    columns=['id', 'object', 'name'],
 )
 
-mb.define_table('records', 'record',
+mb.define_table('records', 'record', 100,
     Field('name', 'string', primary=True),
 )
