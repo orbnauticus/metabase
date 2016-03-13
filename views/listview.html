@@ -6,7 +6,7 @@
                  any(primary in listview.names for primary in listview.table._extra['primary']))}}
 <div class="panel panel-default">
     <div class="panel-heading">{{=listview.title}}
-        <a class="button btn-sm btn-default" href="{{=listview.new_url()}}">New</a></div>
+        <a class="button btn-sm btn-default" href="{{=url(function, verb='n')}}">New</a></div>
     <table class="table" style="table-layout: fixed;">
         <colgroup>
             <col style="width:{{=7.5 if has_primary else 11}}em;">
@@ -17,9 +17,9 @@
         {{for row in listview.rows():}}<tr>
             {{for column in listview.columns():}}<td>{{if column.name == 'id':}}
             {{if not has_primary:}}
-            <a class="btn btn-xs btn-default" href="{{=listview.view_url(row.id)}}">View</a>{{pass}}
-            <a class="btn btn-xs btn-default" href="{{=listview.edit_url(row.id)}}">Edit</a>
-            <a class="btn btn-xs btn-default" href="{{=listview.delete_url(row.id)}}">Delete</a>{{else:}}
+            <a class="btn btn-xs btn-default" href="{{=url(function, row.id)}}">View</a>{{pass}}
+            <a class="btn btn-xs btn-default" href="{{=url(function, row.id, 'e')}}">Edit</a>
+            <a class="btn btn-xs btn-default" href="{{=url(function, row.id, 'd')}}">Delete</a>{{else:}}
             {{=display(column, row)}}{{pass}}</td>{{pass}}
         </tr>{{pass}}
     </table>

@@ -114,10 +114,10 @@ mb.wrap_table(db.auth_group, 'group', 2,
 
 mb.define_table('objects', 'object', 10,
     Field('name', 'string', primary=True),
-    Field('created', 'datetime', default=datetime.datetime.utcnow),
-    Field('created_by', 'reference auth_user', default=auth.user),
-    Field('modified', 'datetime', update=datetime.datetime.utcnow),
-    Field('modified_by', 'reference auth_user', update=auth.user),
+    Field('created', 'datetime', default=datetime.datetime.utcnow, writable=False),
+    Field('created_by', 'reference auth_user', default=auth.user, writable=False),
+    Field('modified', 'datetime', update=datetime.datetime.utcnow, writable=False),
+    Field('modified_by', 'reference auth_user', update=auth.user, writable=False),
     columns=['id', 'name', 'created_by', 'created', 'modified_by', 'modified'],
 )
 

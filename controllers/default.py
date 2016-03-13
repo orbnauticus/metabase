@@ -122,6 +122,7 @@ class Delegate(dict):
         dict.__init__(self,
                       display=self.display,
                       url=self.url,
+                      function=self.function,
         )
         record = self.table(first)
         verb = first if record is None else second
@@ -163,9 +164,8 @@ class Delegate(dict):
         else:
             return SPAN(text, _title=text, _class=type)
 
-    @staticmethod
-    def default_redirect(vars):
-        return URL(request.controller, request.function, args=[vars.id])
+    def default_redirect(self, vars):
+        return self.url(self.function, vars.id)
 
     def build_itemview(self, record):
         return Itemview(self.table, record)
@@ -174,7 +174,7 @@ class Delegate(dict):
         return ListView(self.table, self.list_columns, orderby=self.list_orderby)
 
     def build_form(self, record):
-        return Form(self.table, record, default_redirect=self.default_redirect)
+        return Form(self.table, record, default_redirect=self.default_redirect).process()
 
     def build_delete(self):
         return
@@ -208,6 +208,7 @@ def index():
         None: None,
         'e': 'edit',
         'd': 'delete',
+        'n': 'new',
     }[request.args(1)]
     return Delegate(reference, verb, function=function)
 
