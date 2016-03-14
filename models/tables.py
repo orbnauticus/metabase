@@ -11,7 +11,7 @@ def function_url(controller, function, *args):
 
 def represent_datetime(dt, row=None):
     return dt and (
-        pytz.timezone(auth.user.timezone).localize(dt)
+        pytz.utc.localize(dt).astimezone(pytz.timezone(auth.user.timezone))
         .strftime(auth.user.date_format + ' ' + auth.user.time_format))
 
 
@@ -75,11 +75,11 @@ class MB(object):
     def define_table(self, name, function, index, *fields, **kwargs):
         if kwargs.pop('with_system', True):
             fields += (
-                Field('created', 'datetime', default=datetime.datetime.now,
+                Field('created', 'datetime', default=datetime.datetime.utcnow,
                       writable=False),
                 Field('created_by', 'reference auth_user', default=auth.user,
                       writable=False),
-                Field('modified', 'datetime', update=datetime.datetime.now,
+                Field('modified', 'datetime', update=datetime.datetime.utcnow,
                       writable=False),
                 Field('modified_by', 'reference auth_user', update=auth.user,
                       writable=False),
@@ -147,4 +147,11 @@ mb.define_table('fields', 'field', 12,
 
 mb.define_table('records', 'record', 100,
     Field('name', 'string', primary=True),
+    Field('object', 'reference objects'),
 )
+
+mb.define_table('value', 'value', 101,
+    Field('record', 'reference records'),
+    Field('field', 'reference fields'),
+)
+
