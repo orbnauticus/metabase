@@ -73,6 +73,17 @@ class MB(object):
         )
 
     def define_table(self, name, function, index, *fields, **kwargs):
+        if kwargs.pop('with_system', True):
+            fields += (
+                Field('created', 'datetime', default=datetime.datetime.now,
+                      writable=False),
+                Field('created_by', 'reference auth_user', default=auth.user,
+                      writable=False),
+                Field('modified', 'datetime', update=datetime.datetime.now,
+                      writable=False),
+                Field('modified_by', 'reference auth_user', update=auth.user,
+                      writable=False),
+            )
         properties = dict(kwargs)
         properties.pop('columns', None)
         self.db.define_table(name, *fields, **properties)
@@ -83,17 +94,16 @@ class MB(object):
 
 mb = MB(db)
 
-mb.define_table('organizations', 'organization', 1,
-    Field('name', 'string', primary=True),
-)
-
 auth.settings.extra_fields['auth_user'] = [
     Field('timezone', 'string', requires=IS_IN_SET(pytz.all_timezones)),
     Field('date_format', 'string', requires=IS_IN_SET([
         ('%Y-%m-%d', '2000-01-02'),
     ]), represent=lambda t,row: datetime.datetime.now(tz=pytz.timezone(row['timezone'])).strftime(t)),
     Field('time_format', 'string', requires=IS_IN_SET([
-        ('%H:%M:%S %Z', '03:45:43 PST'),
+        ('%H:%M:%S', '15:45:43'),
+        ('%H:%M:%S %Z', '15:45:43 PST'),
+        ('%I:%M:%S %p', '03:45:43 PM'),
+        ('%I:%M:%S %p %Z', '03:45:43 PM PST'),
     ]), represent=lambda t,row: datetime.datetime.now(tz=pytz.timezone(row['timezone'])).strftime(t)),
 ]
 
@@ -103,21 +113,23 @@ mb.wrap_table(db.auth_user, 'user', 3,
               primary=['username'],
               columns=['id', 'username', 'first_name', 'last_name', 'email'])
 
-mb.define_table('org_membership', 'membership', 2,
-    Field('organization', 'reference organizations'),
-    Field('user', 'reference auth_user'),
-)
-
 mb.wrap_table(db.auth_group, 'group', 2,
               primary=['role'],
               columns=['id', 'role', 'description'])
 
+mb.define_table('organizations', 'organization', 1,
+    Field('name', 'string', primary=True),
+    with_system=False,
+)
+
+mb.define_table('org_membership', 'membership', 2,
+    Field('organization', 'reference organizations'),
+    Field('user', 'reference auth_user'),
+    with_system=False,
+)
+
 mb.define_table('objects', 'object', 10,
     Field('name', 'string', primary=True),
-    Field('created', 'datetime', default=datetime.datetime.utcnow, writable=False),
-    Field('created_by', 'reference auth_user', default=auth.user, writable=False),
-    Field('modified', 'datetime', update=datetime.datetime.utcnow, writable=False),
-    Field('modified_by', 'reference auth_user', update=auth.user, writable=False),
     columns=['id', 'name', 'created_by', 'created', 'modified_by', 'modified'],
 )
 

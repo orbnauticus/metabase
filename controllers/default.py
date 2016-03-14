@@ -114,7 +114,7 @@ class Itemview:
 
 class Delegate(dict):
 
-    def __init__(self, first, second, function):
+    def __init__(self, function, reference, verb=None):
         self.function = function
         self.table = mb.handlers[self.function]
         self.list_orderby = self.table._extra['primary']
@@ -124,8 +124,7 @@ class Delegate(dict):
                       url=self.url,
                       function=self.function,
         )
-        record = self.table(first)
-        verb = first if record is None else second
+        record = self.table(reference)
         if record and verb is None:
             response.view = 'itemview.html'
             self['itemview'] = self.build_itemview(record)
@@ -200,17 +199,18 @@ def index():
         raise HTTP(404)
     function = tables.get(a62.decode(first[:4]), 'not found')
     reference = a62.decode(first[4:]) if first[4:] else None
-    response.flash = CAT(
-        'function: ', function, BR(),
-        'reference: ', reference, BR(),
-    )
     verb = {
         None: None,
         'e': 'edit',
         'd': 'delete',
         'n': 'new',
     }[request.args(1)]
-    return Delegate(reference, verb, function=function)
+    response.flash = CAT(
+        P('function: ', function),
+        P('reference: ', reference),
+        P('verb: ', verb),
+    )
+    return Delegate(function, reference, verb)
 
 
 def user():
