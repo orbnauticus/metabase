@@ -77,7 +77,7 @@ class ListView:
         properties = dict(
             orderby=self.orderby,
         )
-        return db(self.query).select(*self.columns(), **properties)
+        return db(self.query).iterselect(*self.columns(), **properties)
 
     def view_url(self, id):
         return URL(self.controller, self.function, args=[id])
@@ -110,6 +110,13 @@ class Itemview:
     def __init__(self, table, record):
         self.table = table
         self.record = record
+
+    def related(self):
+        for field in self.table._extra['related']:
+            table = field.table
+            names = table._extra['columns']
+            query = (field == self.record.id)
+            yield ListView(table, names, query)
 
 
 class Delegate(dict):

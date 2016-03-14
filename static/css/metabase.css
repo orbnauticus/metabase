@@ -5,3 +5,8 @@ table.table th {
     overflow: hidden;
     white-space: nowrap;
 }
+
+table.table td.no-results {
+    text-align: center;
+    font-style: italic;
+}

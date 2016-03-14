@@ -150,10 +150,13 @@ mb.define_table('fields', 'field', 12,
 mb.define_table('records', 'record', 100,
     Field('name', 'string', primary=True),
     Field('object', 'reference objects'),
+    columns=['id', 'name'],
 )
 
 mb.define_table('value', 'value', 101,
     Field('record', 'reference records'),
     Field('field', 'reference fields'),
+    Field('json', 'string'),
+    columns=['field', 'json'],
 )
 

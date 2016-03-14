@@ -1,0 +1,29 @@
+{{
+def RelatedList(listview):
+    has_primary = ('primary' in listview.table._extra and
+                   any(primary in listview.names for primary in
+                       listview.table._extra['primary']))
+}}<div class="panel panel-default">
+    <div class="panel-heading">{{=listview.title}}
+        <a class="button btn-sm btn-default" href="{{=url(function, verb='n')}}">New</a></div>
+    <table class="table" style="table-layout: fixed;">
+        <colgroup>
+            <col style="width:{{=7.5 if has_primary else 11}}em;">
+        </colgroup>
+        <tr>{{for header in listview.headers():}}
+            <th>{{=header}}</th>{{pass}}
+        </tr>
+        {{
+        i = -1
+        for i, row in enumerate(listview.rows()):}}<tr>
+            {{for column in listview.columns():}}<td>{{if column.name == 'id':}}
+            {{if not has_primary:}}
+            <a class="btn btn-xs btn-default" href="{{=url(function, row.id)}}">View</a>{{pass}}
+            <a class="btn btn-xs btn-default" href="{{=url(function, row.id, 'e')}}">Edit</a>
+            <a class="btn btn-xs btn-default" href="{{=url(function, row.id, 'd')}}">Delete</a>{{else:}}
+            {{=display(column, row)}}{{pass}}</td>{{pass}}
+        </tr>{{pass}}
+        {{if i < 0:}}<tr><td colspan="{{=len(listview.names)}}" class="no-results">No results</td></tr>{{pass}}
+    </table>
+</div>
+{{pass}}
