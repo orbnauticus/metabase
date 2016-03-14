@@ -97,15 +97,19 @@ mb = MB(db)
 auth.settings.extra_fields['auth_user'] = [
     Field('timezone', 'string', requires=IS_IN_SET(pytz.all_timezones)),
     Field('date_format', 'string', requires=IS_IN_SET([
-        ('%Y-%m-%d', '2000-01-02'),
-        ('%m/%d/%Y', '01/02/2000'),
-        ('%m/%d/%y', '01/02/00'),
+        ('%Y-%m-%d', 'yyyy-mm-dd'),
+        ('%m/%d/%Y', 'mm/dd/yyyy'),
+        ('%m/%d/%y', 'mm/dd/yy'),
     ]), represent=lambda t,row: datetime.datetime.now(tz=pytz.timezone(row['timezone'])).strftime(t)),
     Field('time_format', 'string', requires=IS_IN_SET([
-        ('%H:%M:%S', '15:45:43'),
-        ('%H:%M:%S %Z', '15:45:43 PST'),
-        ('%I:%M:%S %p', '03:45:43 PM'),
-        ('%I:%M:%S %p %Z', '03:45:43 PM PST'),
+        ('%H:%M:%S', 'hh:mm:ss'),
+        ('%H:%M:%S %Z', 'hh:mm:ss TZ'),
+        ('%I:%M:%S %p', 'hh:mm:ss AM/PM'),
+        ('%I:%M:%S %p %Z', 'hh:mm:ss AM/PM TZ'),
+        ('%H:%M', 'hh:mm'),
+        ('%H:%M %Z', 'hh:mm TZ'),
+        ('%I:%M %p', 'hh:mm AM/PM'),
+        ('%I:%M %p %Z', 'hh:mm AM/PM TZ'),
     ]), represent=lambda t,row: datetime.datetime.now(tz=pytz.timezone(row['timezone'])).strftime(t)),
 ]
 
