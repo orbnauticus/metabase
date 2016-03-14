@@ -16,7 +16,7 @@
         </tr>{{pass}}{{pass}}
     </table>
 </div>
-{{for field in itemview.table._extra['related']:}}{{=field}}{{pass}}
+{{for field in itemview.table._extra['related']:}}{{=H3(field)}}{{=db(field == itemview.record.id).select() or 'No records'}}{{pass}}
 {{related_lists = itemview.table._extra['related']}}
 {{related_lists = []}}
 {{pass}}
