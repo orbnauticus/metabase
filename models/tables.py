@@ -46,8 +46,9 @@ class MetaBase(object):
         self.db = db
         self.handlers = dict()
 
-    def wrap_table(self, table, function, index, **kwargs):
+    def wrap_table(self, table, function, **kwargs):
         self.handlers[function] = table
+        index = kwargs.pop('index', None) or len(self.handlers)
         primary = kwargs.pop('primary', None) or []
         if primary:
             for field in primary:
@@ -72,7 +73,7 @@ class MetaBase(object):
             columns=kwargs.get('columns') or [],
         )
 
-    def define_table(self, name, function, index, *fields, **kwargs):
+    def define_table(self, name, function, *fields, **kwargs):
         if kwargs.pop('with_system', True):
             fields += (
                 Field('created', 'datetime', default=datetime.datetime.utcnow,
@@ -87,9 +88,7 @@ class MetaBase(object):
         properties = dict(kwargs)
         properties.pop('columns', None)
         self.db.define_table(name, *fields, **properties)
-        return self.wrap_table(
-            getattr(self.db, name), function, index,
-            **kwargs)
+        return self.wrap_table(getattr(self.db, name), function, **kwargs)
 
 
 mb = MetaBase(db)
@@ -115,49 +114,49 @@ auth.settings.extra_fields['auth_user'] = [
 
 auth.define_tables(username=True, signature=False)
 
-mb.wrap_table(db.auth_user, 'user', 3,
+mb.wrap_table(db.auth_user, 'user',
               primary=['username'],
               columns=['id', 'username', 'first_name', 'last_name', 'email'])
 
-mb.wrap_table(db.auth_group, 'group', 2,
+mb.wrap_table(db.auth_group, 'group',
               primary=['role'],
               columns=['id', 'role', 'description'])
 
-mb.define_table('organizations', 'organization', 1,
+mb.define_table('organizations', 'organization',
     Field('name', 'string', primary=True),
     with_system=False,
 )
 
-mb.define_table('org_membership', 'membership', 2,
+mb.define_table('org_membership', 'membership',
     Field('organization', 'reference organizations'),
     Field('user', 'reference auth_user'),
     with_system=False,
 )
 
-mb.define_table('objects', 'object', 10,
+mb.define_table('objects', 'object',
     Field('name', 'string', primary=True),
     columns=['id', 'name', 'created_by', 'created', 'modified_by', 'modified'],
 )
 
-mb.define_table('datatypes', 'datatype', 11,
+mb.define_table('datatypes', 'datatype',
     Field('name', 'string', primary=True),
     Field('db_type', 'string', requires=IS_IN_SET(['string', 'integer'])),
 )
 
-mb.define_table('fields', 'field', 12,
+mb.define_table('fields', 'field',
     Field('object', 'reference objects'),
     Field('name', 'string', primary=True),
     Field('datatype', 'reference datatypes'),
     columns=['id', 'object', 'name'],
 )
 
-mb.define_table('records', 'record', 100,
+mb.define_table('records', 'record',
     Field('name', 'string', primary=True),
     Field('object', 'reference objects'),
     columns=['id', 'name'],
 )
 
-mb.define_table('value', 'value', 101,
+mb.define_table('value', 'value',
     Field('record', 'reference records'),
     Field('field', 'reference fields'),
     Field('json', 'string'),
