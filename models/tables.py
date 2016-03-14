@@ -40,7 +40,7 @@ def Field(name, type='string', *args, **kwargs):
     return field
 
 
-class MB(object):
+class MetaBase(object):
 
     def __init__(self, db):
         self.db = db
@@ -92,7 +92,7 @@ class MB(object):
             **kwargs)
 
 
-mb = MB(db)
+mb = MetaBase(db)
 
 auth.settings.extra_fields['auth_user'] = [
     Field('timezone', 'string', requires=IS_IN_SET(pytz.all_timezones)),
