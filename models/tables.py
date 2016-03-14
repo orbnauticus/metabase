@@ -98,6 +98,8 @@ auth.settings.extra_fields['auth_user'] = [
     Field('timezone', 'string', requires=IS_IN_SET(pytz.all_timezones)),
     Field('date_format', 'string', requires=IS_IN_SET([
         ('%Y-%m-%d', '2000-01-02'),
+        ('%m/%d/%Y', '01/02/2000'),
+        ('%m/%d/%y', '01/02/00'),
     ]), represent=lambda t,row: datetime.datetime.now(tz=pytz.timezone(row['timezone'])).strftime(t)),
     Field('time_format', 'string', requires=IS_IN_SET([
         ('%H:%M:%S', '15:45:43'),
