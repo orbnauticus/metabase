@@ -96,7 +96,11 @@ class ListView:
 
 class Form:
     def __init__(self, table, record=None, default_redirect=None):
-        self.form = SQLFORM(table, record)
+        self.form = SQLFORM(
+            table, record,
+            fields=[field.name for field in table if field.name not in
+                    {'created', 'created_by', 'modified', 'modified_by'}],
+        )
         self.default_redirect = default_redirect
 
     def process(self):
