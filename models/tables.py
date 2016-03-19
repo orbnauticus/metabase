@@ -1,4 +1,5 @@
 
+import collections
 import datetime
 import pytz
 
@@ -42,9 +43,68 @@ def Field(name, type='string', *args, **kwargs):
 
 class MetaBase(object):
 
-    def __init__(self, db):
+    date_formats = [
+        ('%Y-%m-%d', 'yyyy-mm-dd'),
+        ('%m/%d/%Y', 'mm/dd/yyyy'),
+        ('%m/%d/%y', 'mm/dd/yy'),
+    ]
+
+    time_formats = [
+        ('%H:%M:%S', 'hh:mm:ss'),
+        ('%H:%M:%S %Z', 'hh:mm:ss TZ'),
+        ('%I:%M:%S %p', 'hh:mm:ss AM/PM'),
+        ('%I:%M:%S %p %Z', 'hh:mm:ss AM/PM TZ'),
+        ('%H:%M', 'hh:mm'),
+        ('%H:%M %Z', 'hh:mm TZ'),
+        ('%I:%M %p', 'hh:mm AM/PM'),
+        ('%I:%M %p %Z', 'hh:mm AM/PM TZ'),
+    ]
+
+    timezones = pytz.common_timezones
+
+    datatypes = dict(
+        Text=('string',),
+        Number=('integer',),
+    )
+
+    def __init__(self, db, auth):
         self.db = db
+        self.auth = auth
         self.handlers = dict()
+
+    @staticmethod
+    def represent_date_format(format, row):
+        return datetime.datetime.now(
+            tz=pytz.timezone(row['timezone'])
+        ).strftime(format)
+
+    @staticmethod
+    def represent_time_format(format, row):
+        return datetime.datetime.now(
+            tz=pytz.timezone(row['timezone'])
+        ).strftime(format)
+
+    def auth_define_tables(self):
+        self.auth.settings.extra_fields['auth_user'] = [
+            Field('timezone', 'string',
+                  requires=IS_IN_SET(self.timezones)
+            ),
+            Field('date_format', 'string',
+                  requires=IS_IN_SET(self.date_formats),
+                  represent=self.represent_date_format,
+            ),
+            Field('time_format', 'string',
+                  requires=IS_IN_SET(self.time_formats),
+                  represent=self.represent_time_format,
+            ),
+        ]
+        self.auth.define_tables(username=True, signature=False)
+        self.wrap_table(
+            self.db.auth_user, 'user', primary=['username'],
+            columns=['id', 'username', 'first_name', 'last_name', 'email'])
+        self.wrap_table(
+            self.db.auth_group, 'group', primary=['role'],
+            columns=['id', 'role', 'description'])
 
     def wrap_table(self, table, function, **kwargs):
         self.handlers[function] = table
@@ -91,36 +151,9 @@ class MetaBase(object):
         return self.wrap_table(getattr(self.db, name), function, **kwargs)
 
 
-mb = MetaBase(db)
+mb = MetaBase(db, auth)
 
-auth.settings.extra_fields['auth_user'] = [
-    Field('timezone', 'string', requires=IS_IN_SET(pytz.all_timezones)),
-    Field('date_format', 'string', requires=IS_IN_SET([
-        ('%Y-%m-%d', 'yyyy-mm-dd'),
-        ('%m/%d/%Y', 'mm/dd/yyyy'),
-        ('%m/%d/%y', 'mm/dd/yy'),
-    ]), represent=lambda t,row: datetime.datetime.now(tz=pytz.timezone(row['timezone'])).strftime(t)),
-    Field('time_format', 'string', requires=IS_IN_SET([
-        ('%H:%M:%S', 'hh:mm:ss'),
-        ('%H:%M:%S %Z', 'hh:mm:ss TZ'),
-        ('%I:%M:%S %p', 'hh:mm:ss AM/PM'),
-        ('%I:%M:%S %p %Z', 'hh:mm:ss AM/PM TZ'),
-        ('%H:%M', 'hh:mm'),
-        ('%H:%M %Z', 'hh:mm TZ'),
-        ('%I:%M %p', 'hh:mm AM/PM'),
-        ('%I:%M %p %Z', 'hh:mm AM/PM TZ'),
-    ]), represent=lambda t,row: datetime.datetime.now(tz=pytz.timezone(row['timezone'])).strftime(t)),
-]
-
-auth.define_tables(username=True, signature=False)
-
-mb.wrap_table(db.auth_user, 'user',
-              primary=['username'],
-              columns=['id', 'username', 'first_name', 'last_name', 'email'])
-
-mb.wrap_table(db.auth_group, 'group',
-              primary=['role'],
-              columns=['id', 'role', 'description'])
+mb.auth_define_tables()
 
 mb.define_table('organizations', 'organization',
     Field('name', 'string', primary=True),
@@ -138,15 +171,11 @@ mb.define_table('objects', 'object',
     columns=['id', 'name', 'created_by', 'created', 'modified_by', 'modified'],
 )
 
-mb.define_table('datatypes', 'datatype',
-    Field('name', 'string', primary=True),
-    Field('db_type', 'string', requires=IS_IN_SET(['string', 'integer'])),
-)
-
 mb.define_table('fields', 'field',
     Field('object', 'reference objects'),
     Field('name', 'string', primary=True),
-    Field('datatype', 'reference datatypes'),
+    # Field('datatype', 'reference datatypes'),
+    Field('datatype', 'string', requires=IS_IN_SET(sorted(mb.datatypes.keys()))),
     columns=['id', 'object', 'name'],
 )
 
